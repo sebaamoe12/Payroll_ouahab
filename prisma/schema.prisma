@@ -1,0 +1,199 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Company {
+  id                String   @id @default(cuid())
+  name              String
+  slug              String   @unique
+  stripeCustomerId  String?
+  subscriptionStatus String  @default("active")
+  createdAt         DateTime @default(now())
+
+  users     User[]
+  employees Employee[]
+  payrollRuns PayrollRun[]
+  payrolls  EmployeePayroll[]
+}
+
+model User {
+  id        String   @id @default(cuid())
+  email     String   @unique
+  name      String?
+  password  String?
+  role      Role     @default(ADMIN)
+  companyId String
+  company   Company  @relation(fields: [companyId], references: [id])
+  createdAt DateTime @default(now())
+
+  accounts Account[]
+  sessions Session[]
+  approvedAdvances SalaryAdvance[] @relation("ApprovedAdvances")
+  paidPayrolls EmployeePayroll[]
+}
+
+enum Role {
+  ADMIN
+  MANAGER
+  VIEWER
+}
+
+model Employee {
+  id         String   @id @default(cuid())
+  firstName  String
+  lastName   String
+  email      String?
+  position   String
+  baseSalary Decimal  @db.Decimal(10, 2)
+  status     EmployeeStatus @default(ACTIVE)
+  startDate  DateTime
+  phone      String?
+  monthlyAdvanceLimit Decimal @default(50000) @db.Decimal(10, 2)
+  payDay              Int    @default(1)
+  companyId  String
+  company    Company  @relation(fields: [companyId], references: [id])
+  createdAt  DateTime @default(now())
+
+  advances      SalaryAdvance[]
+  payrollRecords PayrollRecord[]
+  payrolls      EmployeePayroll[]
+}
+
+enum EmployeeStatus {
+  ACTIVE
+  INACTIVE
+}
+
+model SalaryAdvance {
+  id         String   @id @default(cuid())
+  amount     Decimal  @db.Decimal(10, 2)
+  reason     String?
+  date       DateTime @default(now())
+  type       AdvanceType @default(SALARY)
+  status     AdvanceStatus @default(PENDING)
+  employeeId String
+  employee   Employee @relation(fields: [employeeId], references: [id])
+  companyId  String
+  approvedById String?
+  approvedBy   User?   @relation("ApprovedAdvances", fields: [approvedById], references: [id])
+  approvedAt DateTime?
+  appliedInPayrollId String?
+  appliedInRecord PayrollRecord? @relation("AppliedAdvances", fields: [appliedInPayrollId], references: [id])
+  appliedInEmployeePayrollId String?
+  appliedInEmployeePayroll EmployeePayroll? @relation("PayrollAdvances", fields: [appliedInEmployeePayrollId], references: [id])
+  createdAt  DateTime @default(now())
+}
+
+enum AdvanceStatus {
+  PENDING
+  APPROVED
+  REJECTED
+  PAID
+}
+
+enum AdvanceType {
+  SALARY
+  EMERGENCY
+  MEDICAL
+  OTHER
+}
+
+model PayrollRun {
+  id          String   @id @default(cuid())
+  companyId   String
+  company     Company  @relation(fields: [companyId], references: [id])
+  periodMonth Int
+  periodYear  Int
+  status      PayrollStatus @default(DRAFT)
+  totalAmount Decimal  @default(0) @db.Decimal(14, 2)
+  processedBy String?
+  createdAt   DateTime @default(now())
+
+  records PayrollRecord[]
+}
+
+enum PayrollStatus {
+  DRAFT
+  APPROVED
+  PAID
+  PENDING
+}
+
+model PayrollRecord {
+  id             String         @id @default(cuid())
+  payrollRunId   String
+  payrollRun     PayrollRun     @relation(fields: [payrollRunId], references: [id])
+  employeeId     String
+  employee       Employee       @relation(fields: [employeeId], references: [id])
+  baseSalary     Decimal        @db.Decimal(10, 2)
+  totalAdvances  Decimal        @default(0) @db.Decimal(10, 2)
+  netSalary      Decimal        @db.Decimal(10, 2)
+  deductions     Decimal        @default(0) @db.Decimal(10, 2)
+  status         PayrollStatus  @default(DRAFT)
+  createdAt      DateTime       @default(now())
+
+  appliedAdvances SalaryAdvance[] @relation("AppliedAdvances")
+}
+
+model EmployeePayroll {
+  id             String    @id @default(cuid())
+  employeeId     String
+  employee       Employee  @relation(fields: [employeeId], references: [id])
+  companyId      String
+  company        Company   @relation(fields: [companyId], references: [id])
+  periodMonth    Int
+  periodYear     Int
+  baseSalary     Decimal   @db.Decimal(10, 2)
+  totalAdvances  Decimal   @default(0) @db.Decimal(10, 2)
+  netSalary      Decimal   @db.Decimal(10, 2)
+  deductions     Decimal   @default(0) @db.Decimal(10, 2)
+  status         PayrollStatus @default(PENDING)
+  paidById       String?
+  paidBy         User?     @relation(fields: [paidById], references: [id])
+  paidAt         DateTime?
+  createdAt      DateTime  @default(now())
+
+  appliedAdvances SalaryAdvance[] @relation("PayrollAdvances")
+
+  @@unique([employeeId, periodMonth, periodYear])
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String?
+  access_token      String?
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String?
+  session_state     String?
+
+  user User @relation(fields: [userId], references: [id])
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id])
+}
+
+model VerificationToken {
+  identifier String
+  token      String   @unique
+  expires    DateTime
+
+  @@unique([identifier, token])
+}
