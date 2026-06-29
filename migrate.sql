@@ -190,9 +190,22 @@ ALTER TABLE "EmployeePayroll" ADD CONSTRAINT "EmployeePayroll_paidById_fkey" FOR
 ALTER TABLE "Account" ADD CONSTRAINT "Account_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 ALTER TABLE "Session" ADD CONSTRAINT "Session_userId_fkey" FOREIGN KEY ("userId") REFERENCES "User"("id") ON DELETE RESTRICT ON UPDATE CASCADE;
 
--- Seed data
-INSERT INTO "Company" ("id", "name", "slug", "createdAt") VALUES
-  ('cm-company-001', 'Société Démo', 'demo-company', NOW());
+-- Seed data (safe to re-run — uses upsert)
+INSERT INTO "Company" ("id", "name", "slug", "createdAt")
+VALUES ('cm-company-001', 'Société Démo', 'demo-company', NOW())
+ON CONFLICT ("slug") DO UPDATE SET "name" = EXCLUDED."name";
 
-INSERT INTO "User" ("id", "email", "name", "password", "role", "companyId", "createdAt") VALUES
-  ('cm-user-admin-001', 'admin@demo.com', 'Admin Test', '$2b$12$Hv11DHeeT.I4Hkmy.jc3Vuy6jyPf3rSNE4sawc6t/ZKjvlkKs8q5u', 'ADMIN', 'cm-company-001', NOW());
+INSERT INTO "User" ("id", "email", "name", "password", "role", "companyId", "createdAt")
+VALUES (
+  'cm-user-admin-001',
+  'admin@demo.com',
+  'Admin Test',
+  '$2b$12$Hv11DHeeT.I4Hkmy.jc3Vuy6jyPf3rSNE4sawc6t/ZKjvlkKs8q5u',
+  'ADMIN',
+  'cm-company-001',
+  NOW()
+)
+ON CONFLICT ("email") DO UPDATE SET
+  "password" = '$2b$12$Hv11DHeeT.I4Hkmy.jc3Vuy6jyPf3rSNE4sawc6t/ZKjvlkKs8q5u',
+  "name" = 'Admin Test',
+  "role" = 'ADMIN';
