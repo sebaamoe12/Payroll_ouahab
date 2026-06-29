@@ -4,8 +4,18 @@ import { Pool } from "pg";
 
 const globalForPrisma = globalThis as unknown as { prisma: PrismaClient };
 
+function getDatabaseUrl(): string {
+  return (
+    process.env.DATABASE_URL ??
+    process.env.POSTGRES_URL_NON_POOLING ??
+    process.env.POSTGRES_PRISMA_URL ??
+    process.env.POSTGRES_URL ??
+    ""
+  );
+}
+
 function createPrismaClient() {
-  const url = process.env.DATABASE_URL!;
+  const url = getDatabaseUrl();
   const isRemote = url.includes("supabase");
   const pool = new Pool({
     connectionString: url,
