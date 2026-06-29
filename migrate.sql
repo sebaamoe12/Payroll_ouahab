@@ -195,4 +195,4 @@ INSERT INTO "Company" ("id", "name", "slug", "createdAt") VALUES
   ('cm-company-001', 'Société Démo', 'demo-company', NOW());
 
 INSERT INTO "User" ("id", "email", "name", "password", "role", "companyId", "createdAt") VALUES
-  ('cm-user-admin-001', 'admin@demo.com', 'Admin Test', '$2b$12$TGRl1aa2b.ohpRu8MD0oGeP3pdQ2Phrm5AAD5DCjUEIe457BDwJ9W', 'ADMIN', 'cm-company-001', NOW());
+  ('cm-user-admin-001', 'admin@demo.com', 'Admin Test', '$2b$12$Hv11DHeeT.I4Hkmy.jc3Vuy6jyPf3rSNE4sawc6t/ZKjvlkKs8q5u', 'ADMIN', 'cm-company-001', NOW());
