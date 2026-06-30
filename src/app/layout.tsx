@@ -32,7 +32,7 @@ export default function RootLayout({
       lang="fr"
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
-      <body className="h-full flex flex-col bg-surface">
+      <body className="h-full flex flex-col bg-surface" suppressHydrationWarning>
         <NextIntlClientProvider locale="fr" messages={messages}>
           <SessionProvider>
             <TRPCProvider>
